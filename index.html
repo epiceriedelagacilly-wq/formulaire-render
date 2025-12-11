@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Commande Clic & Collect — Epicerie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            max-width: 980px;
+            margin: 18px auto;
+            padding: 12px;
+            background-color: #f8f9fa;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #34495e; }
+        fieldset { margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #dcdcdc; border-radius: 8px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+        legend { font-weight: bold; color: #1a73e8; padding: 0 0.5rem; }
+        label { display: block; margin: 0.5rem 0; font-weight: 500; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { border: 1px solid #f0f0f0; padding: 8px; text-align: left; font-size: 0.875rem; }
+        th { background-color: #f7f7f7; font-weight: 600; color: #34495e; }
+        input[type="number"], input[type="text"], input[type="email"], select { border: 1px solid #ccc; padding: 6px 10px; border-radius: 4px; width: 100%; max-width: 300px; box-sizing: border-box; }
+        input[type="number"] { width: 70px; max-width: 70px; text-align: center; }
+        .btn { background: #1a73e8; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background-color 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn:hover:not(:disabled) { background-color: #1660c6; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        #panier { margin-top: 1.5rem; padding: 1rem; border: 1px solid #aed6f1; background: #eaf4ff; border-radius: 8px; }
+        .small { font-size: 0.9rem; color: #7f8c8d; }
+        .out { color: #e74c3c; font-weight: bold; }
+        pre { white-space: pre-wrap; background-color: #fff; padding: 0.5rem; border-radius: 4px; border: 1px solid #f0f0f0; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto">
+        <h1 class="text-3xl font-extrabold text-indigo-700">Commande Clic & Collect — Épicerie</h1>
+        <p class="small mb-4">Horaires retrait : 12:00–14:00 / 17:00–19:00</p>
+
+        <!-- FORMULAIRE FormSubmit -->
+        <form id="orderForm" action="https://formsubmit.co/epiceriedelagacilly@gmail.com" method="POST">
+            
+            <input type="hidden" name="_subject" value="Nouvelle commande Clic & Collect">
+            <input type="hidden" name="panier" id="panierHidden">
+
+            <fieldset>
+                <legend>Vos coordonnées (Obligatoire)</legend>
+                
+                <label for="clientName">Nom Prénom *</label>
+                <input type="text" id="clientName" name="clientName" required placeholder="Votre nom complet" class="p-2 border rounded-md">
+                
+                <label for="clientPhone">Téléphone *</label>
+                <input type="text" id="clientPhone" name="clientPhone" required placeholder="Ex: 06 XX XX XX XX" class="p-2 border rounded-md">
+                
+                <label for="clientEmail">E-mail (Pour confirmation)</label>
+                <input type="email" id="clientEmail" name="clientEmail" placeholder="Votre adresse e-mail" class="p-2 border rounded-md">
+
+            </fieldset>
+
+            <fieldset>
+                <legend>Choix des produits</legend>
+                <p class="small">Indiquez la quantité souhaitée (0 = ne pas ajouter). Le formulaire vérifie le stock disponible.</p>
+                <table id="prodTable" aria-describedby="prodDesc" class="mt-4">
+                    <thead>
+                        <tr><th>Réf</th><th>Produit</th><th>Type</th><th>Famille</th><th>Prix TTC</th><th>Stock</th><th>Qté</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </fieldset>
+
+            <fieldset>
+                <legend>Détails retrait & paiement</legend>
+                <label>Plage retrait *<br>
+                    <select id="timeSlot" name="timeSlot" required class="p-2">
+                        <option value="">-- choisir --</option>
+                        <option>12:00 - 12:30</option>
+                        <option>12:30 - 13:00</option>
+                        <option>13:00 - 13:30</option>
+                        <option>17:00 - 17:30</option>
+                        <option>17:30 - 18:00</option>
+                        <option>18:00 - 18:30</option>
+                    </select>
+                </label>
+                <label>Méthode paiement<br>
+                    <select id="paymentMethod" name="paymentMethod" class="p-2">
+                        <option>Au retrait (espèces / carte)</option>
+                        <option>Prépaiement par téléphone</option>
+                    </select>
+                </label>
+            </fieldset>
+
+            <div id="panier">
+                <strong class="text-xl text-indigo-700">Panier Récapitulatif</strong>
+                <pre id="cartContents" style="margin:8px 0; min-height: 50px;">Aucun produit sélectionné</pre>
+                <div class="text-2xl font-bold mt-2">Total TTC : €<span id="total" class="text-red-600">0.00</span></div>
+            </div>
+
+            <div style="margin-top:20px" class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <button type="submit" class="btn" id="sendBtn" disabled>
+                    Envoyer la commande
+                </button>
+                <button type="button" class="btn bg-gray-500 hover:bg-gray-600" onclick="printSummary()">
+                    Imprimer récapitulatif
+                </button>
+            </div>
+        </form>
+    </div>
+
+<script>
+/* === PRODUITS === */
+const products = [
+    { sku: "PANZ_SPAG1K", type: "PATES ALIMENTAIRES", famille: "Épicerie 5,5%", nom: "PÂTES SPAGHETTI PANZANI 1KG", description: "Spaghetti 100% semoule de blé dur", prix: 2.99, stock: 9 },
+    { sku: "BF_PT12", type: "PAPIER HYGIENIQUE", famille: "DPH 20%", nom: "12 ROULEAUX PAPIER TOILETTE BF", description: "Pack 12 rouleaux ouate 2 plis", prix: 3.75, stock: 4 },
+    { sku: "CN_CAFE250", type: "CAFES . CHICOREES", famille: "EPICERIE 5.5%", nom: "CARTE NOIRE MOULU 250 G", description: "Café 100% Arabica 250 g", prix: 7.95, stock: 12 },
+    { sku: "BF_LESS125", type: "LESSIVE", famille: "DPH 20%", nom: "1,25L LESSIV.LIQUID.MARSEI.B.F", description: "Concentrée savon de Marseille 27 lavages", prix: 3.99, stock: 6 },
+    { sku: "GDS_CHOC62SES", type: "CHOCOLATS EN TABLETTES", famille: "Épicerie 5,5%", nom: "100G CHOC/NOIR/NOIS BIO G.SAIL", description: "Chocolat noir bio 62% avec sésame torréfié", prix: 4.95, stock: 15 }
+];
+
+function escapeHtml(text){ return text ? text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") : ""; }
+
+function initProducts(){
+    const tbody = document.querySelector("#prodTable tbody");
+    products.forEach((p,i)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${escapeHtml(p.sku)}</td>
+            <td title="${escapeHtml(p.description)}">${escapeHtml(p.nom)}</td>
+            <td>${escapeHtml(p.type)}</td>
+            <td>${escapeHtml(p.famille)}</td>
+            <td>€ ${Number(p.prix).toFixed(2)}</td>
+            <td id="stock-${i}">${p.stock}</td>
+            <td><input type="number" name="qty_${i}" min="0" value="0" data-index="${i}" onchange="updateCart()" /></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateCart(){
+    const inputs = document.querySelectorAll('#prodTable input[type="number"]');
+    let total = 0;
+    const lines = [];
+    let stockProblem = false;
+
+    inputs.forEach(inp=>{
+        const idx = parseInt(inp.dataset.index,10);
+        const qty = Math.max(0, parseInt(inp.value)||0);
+        const p = products[idx];
+        const stockCell = document.getElementById(`stock-${idx}`);
+
+        if(qty > p.stock){
+            stockCell.innerHTML = `<span class="out">${p.stock} (max)</span>`;
+            stockProblem = true;
+        } else {
+            stockCell.textContent = p.stock;
+        }
+
+        if(qty>0){
+            const lineTotal = qty*Number(p.prix);
+            total += lineTotal;
+            lines.push({ sku: p.sku, nom: p.nom, quantite: qty, prix: Number(p.prix), total: Number(lineTotal.toFixed(2)) });
+        }
+    });
+
+    const cartContents = document.getElementById("cartContents");
+    cartContents.textContent = lines.length ? lines.map(l=>`${l.sku} | ${l.nom} | qté: ${l.quantite} | €${l.total.toFixed(2)}`).join("\n") : "Aucun produit sélectionné";
+    document.getElementById("total").textContent = total.toFixed(2);
+    document.getElementById("sendBtn").disabled = stockProblem || total <= 0;
+}
+
+function submitOrder(event){
+    event.preventDefault();
+    updateCart();
+    const panierField = document.getElementById("panierHidden");
+
+    const inputs = document.querySelectorAll('#prodTable input[type="number"]');
+    const panierData = [];
+
+    inputs.forEach(inp=>{
+        const idx = parseInt(inp.dataset.index,10);
+        const qty = Math.max(0, parseInt(inp.value)||0);
+        if(qty>0){
+            const p = products[idx];
+            panierData.push({ sku:p.sku, nom:p.nom, quantite:qty, prix:p.prix, total:(qty*p.prix).toFixed(2) });
+        }
+    });
+
+    if(panierData.length===0){
+        alert("Votre panier est vide !");
+        return;
+    }
+
+    panierField.value = JSON.stringify({
+        clientName: document.getElementById("clientName").value,
+        clientPhone: document.getElementById("clientPhone").value,
+        clientEmail: document.getElementById("clientEmail").value,
+        timeSlot: document.getElementById("timeSlot").value,
+        paymentMethod: document.getElementById("paymentMethod").value,
+        produits: panierData,
+        total: document.getElementById("total").textContent
+    });
+
+    document.getElementById("orderForm").submit();
+}
+
+function printSummary(){
+    updateCart();
+    const bodyText = document.getElementById("cartContents").textContent;
+    const w = window.open("", "_blank");
+    if(!w){ alert("Popup bloquée : autorise l'ouverture d'une nouvelle fenêtre pour imprimer."); return; }
+    w.document.write("<pre style='font-family:Arial,Helvetica,sans-serif;white-space:pre-wrap'>" + escapeHtml(bodyText) + "</pre>");
+    w.document.title = "Récapitulatif commande";
+    w.focus();
+    w.print();
+}
+
+/* Init */
+window.onload = function(){
+    initProducts();
+    updateCart();
+    document.getElementById("orderForm").addEventListener("submit", submitOrder);
+};
+</script>
+</body>
+</html>
